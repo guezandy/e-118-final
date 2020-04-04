@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <!-- Load WEB3 -->
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+
+    <title>Ethereum Run Stats</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-dark bg-primary">
+      <a class="navbar-brand" href="">Ethereum Run Stats</a>
+    </nav>
+    <div class="jumbotron">
+      <h1 class="display-4">Store your race stats to the blockchain forever!</h1>
+      <hr class="my-4">
+      <p class="lead" id="status">Status: Initializing web3...</p>
+      <p class="lead" id="address">0x000000</p>
+    </div>
+    <div class="container">
+      <button class='btn btn-success mb-3' id="lookup-stat-button" onclick="statsLookupButtonClicked()" disabled>Lookup your stat(s)</button>
+      <div class="row" style="margin-top: 10px; margin: auto">
+          <h4 id='lookup-stats-error' style='color: red;'></h4>
+          <h4 id='lookup-stats-result' style='color: green;'></h4>
+      </div>
+
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+
+    <script>
+    // Setup variables to be used to initialize smart contract
+    let RunStats, runStats;
+    let error = false;
+    let web3;
+
+    // On every page load initialize the web3 client
+    (async () => {
+        try {
+          // Iif meta mask is installed use it as the provider else use Ganache Cli
+          web3 = new Web3(Web3.currentProvider || "ws://localhost:7545");
+          // Update the status string to show the status
+          document.getElementById('status').innerText = 'Connected! Via Web3 injection.';
+        } catch(error) {
+          // Handle errors
+          document.getElementById('status').innerText = 'Error connecting to Web3 injection - no metamask or local ganache setup';
+          error = true;
+        }
+
+        if (!error) {
+            web3.eth.getAccounts(async (error, accounts) => {
+                if (error) {
+                    return;
+                }
+                document.getElementById('address').innerText = 'Address: ' + accounts[0];
+            });
+            console.log(document);
+            // document.querySelector('#create-stat-button').disabled = false;
+            document.querySelector('#lookup-stat-button').disabled = false;
+        }
+
+        if (!error) {
+            web3.eth.getAccounts(async (error, accounts) => {
+                if (error) {
+                    return;
+                }
+                document.getElementById('address').innerText = 'Address: ' + accounts[0];
+            });
+            document.querySelector('#create-stat-button').disabled = false;
+            document.querySelector('#lookup-stat-button').disabled = false;
+
+            // The interface definition for your smart contract (the ABI)
+            // ABI comes from compiled contracts on smart_contracts/build/contracts/SportStat.json
+            RunStats = new web3.eth.Contract(
+                [
+                  {
+                    "constant": true,
+                    "inputs": [],
+                    "name": "statDelim",
+                    "outputs": [
+                      {
+                        "name": "",
+                        "type": "string"
+                      }
+                    ],
+                    "payable": false,
+                    "stateMutability": "view",
+                    "type": "function"
+                  },
+                  {
+                    "constant": true,
+                    "inputs": [],
+                    "name": "runDelim",
+                    "outputs": [
+                      {
+                        "name": "",
+                        "type": "string"
+                      }
+                    ],
+                    "payable": false,
+                    "stateMutability": "view",
+                    "type": "function"
+                  },
+                  {
+                    "constant": true,
+                    "inputs": [
+                      {
+                        "name": "",
+                        "type": "address"
+                      },
+                      {
+                        "name": "",
+                        "type": "uint256"
+                      }
+                    ],
+                    "name": "addressToStats",
+                    "outputs": [
+                      {
+                        "name": "eventName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "timestamp",
+                        "type": "string"
+                      },
+                      {
+                        "name": "place",
+                        "type": "string"
+                      },
+                      {
+                        "name": "distance",
+                        "type": "string"
+                      },
+                      {
+                        "name": "time",
+                        "type": "string"
+                      },
+                      {
+                        "name": "description",
+                        "type": "string"
+                      }
+                    ],
+                    "payable": false,
+                    "stateMutability": "view",
+                    "type": "function"
+                  },
+                  {
+                    "constant": false,
+                    "inputs": [],
+                    "name": "renounceOwnership",
+                    "outputs": [],
+                    "payable": false,
+                    "stateMutability": "nonpayable",
+                    "type": "function"
+                  },
+                  {
+                    "constant": true,
+                    "inputs": [],
+                    "name": "owner",
+                    "outputs": [
+                      {
+                        "name": "",
+                        "type": "address"
+                      }
+                    ],
+                    "payable": false,
+                    "stateMutability": "view",
+                    "type": "function"
+                  },
+                  {
+                    "constant": true,
+                    "inputs": [],
+                    "name": "isOwner",
+                    "outputs": [
+                      {
+                        "name": "",
+                        "type": "bool"
+                      }
+                    ],
+                    "payable": false,
+                    "stateMutability": "view",
+                    "type": "function"
+                  },
+                  {
+                    "constant": true,
+                    "inputs": [
+                      {
+                        "name": "",
+                        "type": "string"
+                      }
+                    ],
+                    "name": "events",
+                    "outputs": [
+                      {
+                        "name": "",
+                        "type": "string"
+                      }
+                    ],
+                    "payable": false,
+                    "stateMutability": "view",
+                    "type": "function"
+                  },
+                  {
+                    "constant": false,
+                    "inputs": [
+                      {
+                        "name": "newOwner",
+                        "type": "address"
+                      }
+                    ],
+                    "name": "transferOwnership",
+                    "outputs": [],
+                    "payable": false,
+                    "stateMutability": "nonpayable",
+                    "type": "function"
+                  },
+                  {
+                    "anonymous": false,
+                    "inputs": [
+                      {
+                        "indexed": true,
+                        "name": "previousOwner",
+                        "type": "address"
+                      },
+                      {
+                        "indexed": true,
+                        "name": "newOwner",
+                        "type": "address"
+                      }
+                    ],
+                    "name": "OwnershipTransferred",
+                    "type": "event"
+                  },
+                  {
+                    "constant": false,
+                    "inputs": [
+                      {
+                        "name": "eventName",
+                        "type": "string"
+                      },
+                      {
+                        "name": "timestamp",
+                        "type": "string"
+                      },
+                      {
+                        "name": "place",
+                        "type": "string"
+                      },
+                      {
+                        "name": "distance",
+                        "type": "string"
+                      },
+                      {
+                        "name": "time",
+                        "type": "string"
+                      },
+                      {
+                        "name": "description",
+                        "type": "string"
+                      }
+                    ],
+                    "name": "createRunStat",
+                    "outputs": [],
+                    "payable": false,
+                    "stateMutability": "nonpayable",
+                    "type": "function"
+                  },
+                  {
+                    "constant": true,
+                    "inputs": [],
+                    "name": "getRunStats",
+                    "outputs": [
+                      {
+                        "name": "",
+                        "type": "string"
+                      }
+                    ],
+                    "payable": false,
+                    "stateMutability": "view",
+                    "type": "function"
+                  }
+                ], '0x666a4452570C60d086e8b9bF7379A9F95B2fd755'
+            );
+            console.log(RunStats);
+            // Grab the contract at specified deployed address with the interface defined by the ABI
+            // runStats = RunStats.at('0x666a4452570C60d086e8b9bF7379A9F95B2fd755');
+            // console.log(runStats);
+        }
+    })();
+
+
+    // Onclick handlers
+    const createSportsStat = async () => {
+        web3.eth.getAccounts(async (error, accounts) => {
+            if (error) {
+                return
+            }
+            var account = accounts[0];
+            const eventName = document.querySelector('#eventName').value;
+            const timestamp = document.querySelector('#timestamp').value;
+            const place = document.querySelector('#place').value;
+            const distance = document.querySelector('#distance').value;
+            const time = document.querySelector('#time').value;
+            const description = document.querySelector('#description').value;
+            if(!eventName || !timestamp || !place || !distance || !time || !description) {
+                document.querySelector('#create-stat-error').innerText = 'All fields are required';
+                return;
+            }
+            runStats.createRunStat(eventName, timestamp, place, distance, time, description, (error, result) => {
+                if(error) {
+                    document.querySelector('#create-stat-error').innerText = `Contract failed: ${error.message}`;
+                }
+                //  Use ajax to call creation of DB elements so we have a local copy
+            });
+        });
+    };
+    const statsLookupButtonClicked = async () => {
+        web3.eth.getAccounts(async (error, accounts) => {
+            if (error) {
+                return
+            }
+
+            var account = accounts[0];
+            console.log(RunStats.methods);
+            RunStats.methods.getRunStats().call({from: account }, function(error, result) {
+              if (error) {
+                    document.querySelector('#lookup-stats-error').innerText = 'Error: ' + error.message;
+                    return;
+                }
+                document.querySelector('#lookup-stats-result').innerText = result;
+            });
+        });
+    }
+    </script>
+
+  </body>
+</html>
