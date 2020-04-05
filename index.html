@@ -24,12 +24,42 @@
       <p class="lead" id="address">0x000000</p>
     </div>
     <div class="container">
-      <button class='btn btn-success mb-3' id="lookup-stat-button" onclick="statsLookupButtonClicked()" disabled>Lookup your stat(s)</button>
-      <div class="row" style="margin-top: 10px; margin: auto">
+      <div class="row">
+        <div class="col-sm-6">
+          <h4 id='create-stat-error' style='color: red;'></h4>
+          <h4 id='create-stat-result' style='color: green;'></h4>
+          <div class="form-group">
+            <label for="eventName">Event name</label>
+            <input type="text" class="form-control" id="eventName" placeholder="Enter event name" value="Boston Marathon" required>
+          </div>
+          <div class="form-group">
+            <label for="timestamp">Date of event</label>
+            <input type="text" class="form-control" id="timestamp" placeholder="Date of event" value="September 14, 2020" required>
+          </div>
+          <div class="form-group">
+            <label for="place">Overall Place</label>
+            <input type="text" class="form-control" id="place" placeholder="Overall place" value="1523" required>
+          </div>
+          <div class="form-group">
+            <label for="distance">Distance</label>
+            <input type="text" class="form-control" id="distance" placeholder="Enter event distance" value="26.2 miles" required>
+          </div>
+          <div class="form-group">
+            <label for="time">Time</label>
+            <input type="text" class="form-control" id="time" placeholder="Resulting time" value="4 hours 30 mins" required>
+          </div>
+          <div class="form-group">
+            <label for="description">Description</label>
+            <input type="text" class="form-control" id="description" placeholder="Description of event" value="Cold day in boston" required>
+          </div>
+          <button class='btn btn-success mb-3' id="create-stat-button" onclick="createRunStatButtonClicked()" disabled>Create a new record</button>
+        </div>
+        <div class="col-sm-6">
+          <button class='btn btn-success mb-3' id="lookup-stat-button" onclick="statsLookupButtonClicked()" disabled>Lookup your stat(s)</button>
           <h4 id='lookup-stats-error' style='color: red;'></h4>
           <h4 id='lookup-stats-result' style='color: green;'></h4>
+        </div>
       </div>
-
     </div>
 
     <!-- Optional JavaScript -->
@@ -41,7 +71,7 @@
 
     <script>
     // Setup variables to be used to initialize smart contract
-    let RunStats, runStats;
+    let RunStats;
     let error = false;
     let web3;
 
@@ -65,8 +95,7 @@
                 }
                 document.getElementById('address').innerText = 'Address: ' + accounts[0];
             });
-            console.log(document);
-            // document.querySelector('#create-stat-button').disabled = false;
+            document.querySelector('#create-stat-button').disabled = false;
             document.querySelector('#lookup-stat-button').disabled = false;
         }
 
@@ -77,7 +106,7 @@
                 }
                 document.getElementById('address').innerText = 'Address: ' + accounts[0];
             });
-            document.querySelector('#create-stat-button').disabled = false;
+            // document.querySelector('#create-stat-button').disabled = false;
             document.querySelector('#lookup-stat-button').disabled = false;
 
             // The interface definition for your smart contract (the ABI)
@@ -292,57 +321,69 @@
                   }
                 ], '0x666a4452570C60d086e8b9bF7379A9F95B2fd755'
             );
-            console.log(RunStats);
-            // Grab the contract at specified deployed address with the interface defined by the ABI
-            // runStats = RunStats.at('0x666a4452570C60d086e8b9bF7379A9F95B2fd755');
-            // console.log(runStats);
         }
     })();
 
 
     // Onclick handlers
-    const createSportsStat = async () => {
+    const createRunStatButtonClicked = async () => {
         web3.eth.getAccounts(async (error, accounts) => {
             if (error) {
                 return
             }
-            var account = accounts[0];
+            // Use first account
+            const account = accounts[0];
+            // Grab data from the form
             const eventName = document.querySelector('#eventName').value;
             const timestamp = document.querySelector('#timestamp').value;
             const place = document.querySelector('#place').value;
             const distance = document.querySelector('#distance').value;
             const time = document.querySelector('#time').value;
             const description = document.querySelector('#description').value;
+            //  Validate all fields are populated
             if(!eventName || !timestamp || !place || !distance || !time || !description) {
                 document.querySelector('#create-stat-error').innerText = 'All fields are required';
                 return;
             }
-            runStats.createRunStat(eventName, timestamp, place, distance, time, description, (error, result) => {
-                if(error) {
-                    document.querySelector('#create-stat-error').innerText = `Contract failed: ${error.message}`;
-                }
-                //  Use ajax to call creation of DB elements so we have a local copy
-            });
+            // Call RunStats createRunStat  method
+            try {
+                const res  =  await RunStats.methods.createRunStat(eventName, timestamp, place, distance, time, description).send(
+                  // From account and include  gas so we don't run out of gas making request
+                  { from: account, gas:3000000 }
+                );
+                document.querySelector('#create-stat-result').innerText = `Successfully saved new run stat`;
+            } catch (error) {
+              document.querySelector('#create-stat-error').innerText = `Contract failed: ${error.message}`;
+            }
         });
     };
+
+    // Call getRunStats from ethereum contract, and display results
     const statsLookupButtonClicked = async () => {
         web3.eth.getAccounts(async (error, accounts) => {
             if (error) {
                 return
             }
-
-            var account = accounts[0];
-            console.log(RunStats.methods);
-            RunStats.methods.getRunStats().call({from: account }, function(error, result) {
-              if (error) {
+            // Use the first account on metamask
+            const account = accounts[0];
+            // Actually call the method and pass the current account
+            RunStats.methods.getRunStats().call({ from: account }, function(error, result) {
+                console.log(error,result);
+                // Handle error case 
+                if (error) {
                     document.querySelector('#lookup-stats-error').innerText = 'Error: ' + error.message;
                     return;
                 }
-                document.querySelector('#lookup-stats-result').innerText = result;
+                // Handle no runs saved yet
+                if (result === '') {
+                  document.querySelector('#lookup-stats-result').innerText = 'No results';
+                }  else {
+                  // Handle successful data pull
+                  document.querySelector('#lookup-stats-result').innerText = result;
+                }
             });
         });
     }
     </script>
-
   </body>
 </html>
