@@ -101,16 +101,19 @@
 
     // On every page load initialize the web3 client
     (async () => {
-        try {
-          // If meta mask is installed use it as the provider else use Ganache Cli
-          // wss://mainnet.infura.io/ws/v3/0ebda51d1e5344349355d3dbd9a5c468
-          web3 = new Web3(Web3.currentProvider || "ws://localhost:7545");
-          // Update the status string to show the status
-          document.getElementById('status').innerText = 'Ethereum wallet connected! Via Web3 injection.';
-        } catch(error) {
-          // Handle errors
-          document.getElementById('status').innerText = 'Error connecting to Web3 injection - no metamask or local ganache setup';
-          error = true;
+        // Modern dapp browsers...
+        if (window.ethereum) {
+            web3 = new Web3(window.ethereum);
+            try {
+                await window.ethereum.enable();
+                document.getElementById('status').innerText = 'Ethereum wallet connected! Via Web3 injection.';
+            } catch (error) {
+                document.getElementById('status').innerText = 'Error connecting to Web3 injection - no metamask or local ganache setup';
+                error = true;
+            }
+        } else {
+            document.getElementById('status').innerText = 'Error! No Ethereum in browser';
+            error = true;
         }
 
         if (!error) {
