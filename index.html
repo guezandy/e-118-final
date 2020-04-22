@@ -25,38 +25,62 @@
     </div>
     <div class="container">
       <div class="row">
-        <div class="col-sm-6">
-          <h4 id='create-stat-error' style='color: red;'></h4>
-          <h4 id='create-stat-result' style='color: green;'></h4>
-          <div class="form-group">
-            <label for="eventName">Event name</label>
-            <input type="text" class="form-control" id="eventName" placeholder="Enter event name" value="Boston Marathon" required>
+        <div class="card" style="width: 50%; margin-bottom: 50px;">
+          <div class="card-header">
+            Save event form
           </div>
-          <div class="form-group">
-            <label for="timestamp">Date of event</label>
-            <input type="text" class="form-control" id="timestamp" placeholder="Date of event" value="September 14, 2020" required>
+          <div class="card-body">
+            <div class="form-group">
+              <label for="eventName">Event name</label>
+              <input type="text" class="form-control" id="eventName" placeholder="Enter event name" value="Boston Marathon" required>
+            </div>
+            <div class="form-group">
+              <label for="timestamp">Date of event</label>
+              <input type="text" class="form-control" id="timestamp" placeholder="Date of event" value="September 14, 2020" required>
+            </div>
+            <div class="form-group">
+              <label for="place">Overall Place</label>
+              <input type="text" class="form-control" id="place" placeholder="Overall place" value="1523" required>
+            </div>
+            <div class="form-group">
+              <label for="distance">Distance</label>
+              <input type="text" class="form-control" id="distance" placeholder="Enter event distance" value="26.2 miles" required>
+            </div>
+            <div class="form-group">
+              <label for="time">Time</label>
+              <input type="text" class="form-control" id="time" placeholder="Resulting time" value="4 hours 30 mins" required>
+            </div>
+            <div class="form-group">
+              <label for="description">Description</label>
+              <input type="text" class="form-control" id="description" placeholder="Description of event" value="Cold day in boston" required>
+            </div>
+            <button class='btn btn-success mb-3' id="create-stat-button" onclick="createRunStatButtonClicked()" disabled>Create a new record</button>
           </div>
-          <div class="form-group">
-            <label for="place">Overall Place</label>
-            <input type="text" class="form-control" id="place" placeholder="Overall place" value="1523" required>
+          <div class="card-footer">
+            <h4 id='create-stat-error' style='color: red;'></h4>
+            <h4 id='create-stat-result' style='color: green;'></h4>
           </div>
-          <div class="form-group">
-            <label for="distance">Distance</label>
-            <input type="text" class="form-control" id="distance" placeholder="Enter event distance" value="26.2 miles" required>
-          </div>
-          <div class="form-group">
-            <label for="time">Time</label>
-            <input type="text" class="form-control" id="time" placeholder="Resulting time" value="4 hours 30 mins" required>
-          </div>
-          <div class="form-group">
-            <label for="description">Description</label>
-            <input type="text" class="form-control" id="description" placeholder="Description of event" value="Cold day in boston" required>
-          </div>
-          <button class='btn btn-success mb-3' id="create-stat-button" onclick="createRunStatButtonClicked()" disabled>Create a new record</button>
         </div>
         <div class="col-sm-6">
-          <button class='btn btn-success mb-3' id="lookup-stat-button" onclick="statsLookupButtonClicked()" disabled>Lookup your stat(s)</button>
+          <button class='btn btn-info mb-3' id="lookup-stat-button" onclick="statsLookupButtonClicked()" disabled>Lookup your stat(s)</button>
           <h4 id='lookup-stats-error' style='color: red;'></h4>
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Date</th>
+                <th scope="col">Place</th>
+                <th scope="col">Distance</th>
+                <th scope="col">Time</th>
+                <th scope="col">Description</th>
+              </tr>
+            </thead>
+            <tbody id="stats-table">
+              <tr id='empty'>
+                <th scope="row">No results</th>
+              </tr>
+            </tbody>
+          </table>
           <h4 id='lookup-stats-result' style='color: green;'></h4>
         </div>
       </div>
@@ -78,10 +102,11 @@
     // On every page load initialize the web3 client
     (async () => {
         try {
-          // Iif meta mask is installed use it as the provider else use Ganache Cli
+          // If meta mask is installed use it as the provider else use Ganache Cli
+          // wss://mainnet.infura.io/ws/v3/0ebda51d1e5344349355d3dbd9a5c468
           web3 = new Web3(Web3.currentProvider || "ws://localhost:7545");
           // Update the status string to show the status
-          document.getElementById('status').innerText = 'Connected! Via Web3 injection.';
+          document.getElementById('status').innerText = 'Ethereum wallet connected! Via Web3 injection.';
         } catch(error) {
           // Handle errors
           document.getElementById('status').innerText = 'Error connecting to Web3 injection - no metamask or local ganache setup';
@@ -93,8 +118,10 @@
                 if (error) {
                     return;
                 }
+                // Show first account address
                 document.getElementById('address').innerText = 'Address: ' + accounts[0];
             });
+            // Enable buttons now that account is connected
             document.querySelector('#create-stat-button').disabled = false;
             document.querySelector('#lookup-stat-button').disabled = false;
         }
@@ -319,7 +346,7 @@
                     "stateMutability": "view",
                     "type": "function"
                   }
-                ], '0x666a4452570C60d086e8b9bF7379A9F95B2fd755'
+                ], '0xd3439e5C8b656D9266E22e57d56633259e119a73'
             );
         }
     })();
@@ -333,6 +360,8 @@
             }
             // Use first account
             const account = accounts[0];
+            console.log(accounts, account);
+
             // Grab data from the form
             const eventName = document.querySelector('#eventName').value;
             const timestamp = document.querySelector('#timestamp').value;
@@ -345,14 +374,18 @@
                 document.querySelector('#create-stat-error').innerText = 'All fields are required';
                 return;
             }
-            // Call RunStats createRunStat  method
+            // Call RunStats createRunStat method
             try {
                 const res  =  await RunStats.methods.createRunStat(eventName, timestamp, place, distance, time, description).send(
                   // From account and include  gas so we don't run out of gas making request
                   { from: account, gas:3000000 }
                 );
+                console.log(res)
+                // Clear error
+                document.querySelector('#create-stat-error').innerText = '';
                 document.querySelector('#create-stat-result').innerText = `Successfully saved new run stat`;
             } catch (error) {
+              document.querySelector('#create-stat-result').innerText = '';
               document.querySelector('#create-stat-error').innerText = `Contract failed: ${error.message}`;
             }
         });
@@ -376,10 +409,23 @@
                 }
                 // Handle no runs saved yet
                 if (result === '') {
+                  // Clear error message
+                  document.querySelector('#lookup-stats-error').innerText = '';
+                  // Render no results
                   document.querySelector('#lookup-stats-result').innerText = 'No results';
                 }  else {
+                  // Clear error message
+                  document.querySelector('#lookup-stats-error').innerText = '';
                   // Handle successful data pull
-                  document.querySelector('#lookup-stats-result').innerText = result;
+                  const res_array = result.split("%r%");
+                  // Convert array into rows
+                  const table_rows = res_array.filter(run => run !== "").map(run => {
+                    const stats = run.split("%s%");
+                    const stats_cells = stats.map(stat => (`<th>${stat}</th>`)).join('');
+                    return `<tr>${stats_cells}</tr>`;
+                  });
+                  // Add rows to the table
+                  document.querySelector("#stats-table").innerHTML = table_rows.join('');
                 }
             });
         });
