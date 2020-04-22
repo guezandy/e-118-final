@@ -104,7 +104,11 @@
         // Modern dapp browsers...
         if (window.ethereum) {
             web3 = new Web3(window.ethereum);
-            console.log(web3.version.network);
+            // Fail if not in Rinkeby
+            if (web3.currentProvider.networkVersion !== "4") {
+              document.getElementById('status').innerText = 'Error! This app works only on Rinkeby test net - please change Metamask to Rinkeby and refresh the page';
+              return;
+            }
             try {
                 await window.ethereum.enable();
                 document.getElementById('status').innerText = 'Ethereum wallet connected! Via Web3 injection.';
